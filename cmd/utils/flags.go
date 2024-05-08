@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
 	"math"
 	"math/big"
 	"net"
@@ -491,6 +492,12 @@ var (
 		Name:     "miner.newpayload-timeout",
 		Usage:    "Specify the maximum time allowance for creating a new payload",
 		Value:    ethconfig.Defaults.Miner.NewPayloadTimeout,
+		Category: flags.MinerCategory,
+	}
+	NoBaseFeeFlag = &cli.BoolFlag{
+		Name:     "miner.nobasefee",
+		Usage:    "zero base fee",
+		Value:    eip1559.NoBaseFee,
 		Category: flags.MinerCategory,
 	}
 
@@ -1615,6 +1622,9 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	}
 	if ctx.IsSet(RollupComputePendingBlock.Name) {
 		cfg.RollupComputePendingBlock = ctx.Bool(RollupComputePendingBlock.Name)
+	}
+	if ctx.IsSet(NoBaseFeeFlag.Name) {
+		eip1559.NoBaseFee = ctx.Bool(NoBaseFeeFlag.Name)
 	}
 }
 
