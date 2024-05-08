@@ -41,6 +41,10 @@ const (
 	scalarSectionStart = 32 - BaseFeeScalarSlotOffset - 4
 )
 
+var (
+	L1GasFeeMax = int64(1e18) // 1 ETH
+)
+
 func init() {
 	if BlobBaseFeeScalarSlotOffset != BaseFeeScalarSlotOffset-4 {
 		panic("this code assumes the scalars are at adjacent positions in the scalars slot")
@@ -181,6 +185,9 @@ func newL1CostFuncBedrockHelper(l1BaseFee, overhead, scalar *big.Int, isRegolith
 		gasWithOverhead := new(big.Int).SetUint64(gas)
 		gasWithOverhead.Add(gasWithOverhead, overhead)
 		l1Cost := l1CostHelper(gasWithOverhead, l1BaseFee, scalar)
+		if l1Cost.Cmp(big.NewInt(L1GasFeeMax)) > 0 {
+			l1Cost = big.NewInt(L1GasFeeMax)
+		}
 		return l1Cost, gasWithOverhead
 	}
 }
