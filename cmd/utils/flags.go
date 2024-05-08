@@ -494,7 +494,7 @@ var (
 		Value:    ethconfig.Defaults.Miner.NewPayloadTimeout,
 		Category: flags.MinerCategory,
 	}
-	NoBaseFeeFlag = &cli.BoolFlag{
+	MinerNoBaseFeeFlag = &cli.BoolFlag{
 		Name:     "miner.nobasefee",
 		Usage:    "zero base fee",
 		Value:    eip1559.NoBaseFee,
@@ -1623,8 +1623,8 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	if ctx.IsSet(RollupComputePendingBlock.Name) {
 		cfg.RollupComputePendingBlock = ctx.Bool(RollupComputePendingBlock.Name)
 	}
-	if ctx.IsSet(NoBaseFeeFlag.Name) {
-		eip1559.NoBaseFee = ctx.Bool(NoBaseFeeFlag.Name)
+	if ctx.IsSet(MinerNoBaseFeeFlag.Name) {
+		eip1559.NoBaseFee = ctx.Bool(MinerNoBaseFeeFlag.Name)
 	}
 }
 
