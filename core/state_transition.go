@@ -148,6 +148,7 @@ type Message struct {
 
 	IsSystemTx     bool                 // IsSystemTx indicates the message, if also a deposit, does not emit gas usage.
 	IsDepositTx    bool                 // IsDepositTx indicates the message is force-included and can persist a mint.
+	IsNoFeeTx      bool                 // IsNoFeeTx
 	Mint           *big.Int             // Mint is the amount to mint before EVM processing, or nil if there is no minting.
 	RollupCostData types.RollupCostData // RollupCostData caches data to compute the fee we charge for data availability
 }
@@ -166,6 +167,7 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 		AccessList:     tx.AccessList(),
 		IsSystemTx:     tx.IsSystemTx(),
 		IsDepositTx:    tx.IsDepositTx(),
+		IsNoFeeTx:      tx.IsNoFeeTx(),
 		Mint:           tx.Mint(),
 		RollupCostData: tx.RollupCostData(),
 
@@ -276,6 +278,10 @@ func (st *StateTransition) buyGas() error {
 	balanceCheckU256, overflow := uint256.FromBig(balanceCheck)
 	if overflow {
 		return fmt.Errorf("%w: address %v required balance exceeds 256 bits", ErrInsufficientFunds, st.msg.From.Hex())
+	}
+	if st.msg.IsNoFeeTx {
+		balanceCheckU256, _ = uint256.FromBig(big.NewInt(0))
+		mgval = big.NewInt(0)
 	}
 	if have, want := st.state.GetBalance(st.msg.From), balanceCheckU256; have.Cmp(want) < 0 {
 		return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, st.msg.From.Hex(), have, want)

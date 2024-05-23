@@ -64,6 +64,7 @@ type Transaction struct {
 
 	// cache of details to compute the data availability fee
 	rollupCostData atomic.Value
+	isNoFeeTx      bool
 }
 
 // NewTx creates a new transaction.
@@ -330,6 +331,16 @@ func (tx *Transaction) To() *common.Address {
 	return copyAddressPtr(tx.inner.to())
 }
 
+// IsNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
+func (tx *Transaction) IsNoFeeTx() bool {
+	return tx.isNoFeeTx
+}
+
+// IsNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
+func (tx *Transaction) SetNoFeeTx() {
+	tx.isNoFeeTx = true
+}
+
 // SourceHash returns the hash that uniquely identifies the source of the deposit tx,
 // e.g. a user deposit event, or a L1 info deposit included in a specific L2 block height.
 // Non-deposit transactions return a zeroed hash.
@@ -362,6 +373,9 @@ func (tx *Transaction) IsSystemTx() bool {
 
 // Cost returns (gas * gasPrice) + (blobGas * blobGasPrice) + value.
 func (tx *Transaction) Cost() *big.Int {
+	if tx.IsNoFeeTx() {
+		return big.NewInt(0)
+	}
 	total := new(big.Int).Mul(tx.GasPrice(), new(big.Int).SetUint64(tx.Gas()))
 	if tx.Type() == BlobTxType {
 		total.Add(total, new(big.Int).Mul(tx.BlobGasFeeCap(), new(big.Int).SetUint64(tx.BlobGas())))
@@ -372,7 +386,7 @@ func (tx *Transaction) Cost() *big.Int {
 
 // RollupCostData caches the information needed to efficiently compute the data availability fee
 func (tx *Transaction) RollupCostData() RollupCostData {
-	if tx.Type() == DepositTxType {
+	if tx.Type() == DepositTxType || tx.IsNoFeeTx() {
 		return RollupCostData{}
 	}
 	if v := tx.rollupCostData.Load(); v != nil {
