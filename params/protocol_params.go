@@ -27,6 +27,7 @@ var (
 	OptimismBaseFeeRecipient = common.HexToAddress("0x4200000000000000000000000000000000000019")
 	// The L1 portion of the transaction fee accumulates at this predeploy
 	OptimismL1FeeRecipient = common.HexToAddress("0x420000000000000000000000000000000000001A")
+	BTCLayer2Bridge        = common.HexToAddress("0x5000000000000000000000000000000000000001")
 )
 
 const (
@@ -195,4 +196,6 @@ var (
 	BeaconRootsStorageAddress = common.HexToAddress("0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02")
 	// SystemAddress is where the system-transaction is sent from as per EIP-4788
 	SystemAddress common.Address = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
+
+	BTCLayer2BridgeProposerAddressesSlotNum = big.NewInt(2)
 )

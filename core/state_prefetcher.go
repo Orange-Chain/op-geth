@@ -17,6 +17,7 @@
 package core
 
 import (
+	"github.com/ethereum/go-ethereum/log"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/consensus"
@@ -58,6 +59,11 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 	// Iterate over and process the individual transactions
 	byzantium := p.config.IsByzantium(block.Number())
 	for i, tx := range block.Transactions() {
+		err := statedb.CheckNoFeeTx(tx, signer)
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
 		// If block precaching was interrupted, abort
 		if interrupt != nil && interrupt.Load() {
 			return

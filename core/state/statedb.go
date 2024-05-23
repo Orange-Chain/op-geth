@@ -19,7 +19,10 @@ package state
 
 import (
 	"fmt"
+	"golang.org/x/crypto/sha3"
+	"math/big"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -243,6 +246,30 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 		copy(pi, preimage)
 		s.preimages[hash] = pi
 	}
+}
+
+// CheckNoFeeTx Check if it's a no gas fee transaction and flag it if so
+func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
+	if strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
+		from, err := signer.Sender(tx)
+		if err != nil {
+			log.Error("Transaction sender recovery failed", "err", err)
+			return err
+		}
+		// Assuming a maximum of 100 admin
+		for i := 0; i < 100; i++ {
+			slotHash := CalcSlotHashBySlotAndIndex(params.BTCLayer2BridgeProposerAddressesSlotNum, i)
+			admin := s.GetState(params.BTCLayer2Bridge, slotHash)
+			if admin.Cmp(common.Hash{}) == 0 {
+				break
+			}
+			if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
+				tx.SetNoFeeTx()
+				return nil
+			}
+		}
+	}
+	return nil
 }
 
 // Preimages returns a list of SHA3 preimages that have been submitted.
@@ -1413,4 +1440,17 @@ func copy2DSet[k comparable](set map[k]map[common.Hash][]byte) map[k]map[common.
 		}
 	}
 	return copied
+}
+
+// CalcSlotHashBySlotAndIndex calculates the slot hash by slot and index.
+func CalcSlotHashBySlotAndIndex(slot *big.Int, index int) common.Hash {
+	slotHex := slot.Bytes()
+	paddedSlotHex := make([]byte, 32)
+	copy(paddedSlotHex[32-len(slotHex):], slotHex)
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(paddedSlotHex)
+	slotHash := hash.Sum(nil)
+	arrayStartPositionBigInt := new(big.Int).SetBytes(slotHash)
+	elementPositionBigInt := new(big.Int).Add(arrayStartPositionBigInt, big.NewInt(int64(index)))
+	return common.BytesToHash(elementPositionBigInt.Bytes())
 }
