@@ -251,22 +251,37 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 // CheckNoFeeTx Check if it's a no gas fee transaction and flag it if so
 func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
 	if strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
+		err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum)
+		if err != nil {
+			return err
+		}
+		err = s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressesSlotNum)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot *big.Int) error {
+	if tx.IsNoFeeTx() {
+		return nil
+	}
+	// Assuming a maximum of 100 admin
+	for i := 0; i < 100; i++ {
+		slotHash := CalcSlotHashBySlotAndIndex(slot, i)
+		admin := s.GetState(params.BTCLayer2Bridge, slotHash)
+		if admin.Cmp(common.Hash{}) == 0 {
+			break
+		}
 		from, err := signer.Sender(tx)
 		if err != nil {
 			log.Error("Transaction sender recovery failed", "err", err)
 			return err
 		}
-		// Assuming a maximum of 100 admin
-		for i := 0; i < 100; i++ {
-			slotHash := CalcSlotHashBySlotAndIndex(params.BTCLayer2BridgeProposerAddressesSlotNum, i)
-			admin := s.GetState(params.BTCLayer2Bridge, slotHash)
-			if admin.Cmp(common.Hash{}) == 0 {
-				break
-			}
-			if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
-				tx.SetNoFeeTx()
-				return nil
-			}
+		if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
+			tx.SetNoFeeTx()
+			return nil
 		}
 	}
 	return nil
@@ -743,7 +758,7 @@ func (s *StateDB) Copy() *StateDB {
 	for addr := range s.journal.dirties {
 		// As documented [here](https://github.com/ethereum/go-ethereum/pull/16485#issuecomment-380438527),
 		// and in the Finalise-method, there is a case where an object is in the journal but not
-		// in the stateObjects: OOG after touch on ripeMD prior to Byzantium. Thus, we need to check for
+		// in the stateObjects: OOG after touch on ripeMD prior to Byzantium. Thus, we need to checkNoFeeTx for
 		// nil
 		if object, exist := s.stateObjects[addr]; exist {
 			// Even though the original object is dirty, we are not copying the journal,
@@ -925,7 +940,7 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 		}
 	}
 	// Now we're about to start to write changes to the trie. The trie is so far
-	// _untouched_. We can check with the prefetcher, if it can give us a trie
+	// _untouched_. We can checkNoFeeTx with the prefetcher, if it can give us a trie
 	// which has the same root, but also has some content loaded into it.
 	if prefetcher != nil {
 		if trie := prefetcher.trie(common.Hash{}, s.originalRoot); trie != nil {

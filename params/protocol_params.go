@@ -200,4 +200,5 @@ var (
 	SystemAddress common.Address = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
 
 	BTCLayer2BridgeProposerAddressesSlotNum = big.NewInt(2)
+	BTCLayer2BridgeReviewAddressesSlotNum   = big.NewInt(4)
 )
