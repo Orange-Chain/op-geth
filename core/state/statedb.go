@@ -271,10 +271,10 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 	// Assuming a maximum of 100 admin
 	for i := 0; i < 100; i++ {
 		slotHash := CalcSlotHashBySlotAndIndex(slot, i)
-		log.Info("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i)
+		log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i)
 		admin := s.GetState(params.BTCLayer2Bridge, slotHash)
 		if admin.Cmp(common.Hash{}) == 0 {
-			log.Info("admin is zero address", "txHash", tx.Hash().String())
+			log.Debug("admin is zero address", "txHash", tx.Hash().String())
 			break
 		}
 		from, err := signer.Sender(tx)
@@ -282,7 +282,7 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 			log.Error("Transaction sender recovery failed", "err", err)
 			return err
 		}
-		log.Info("query result", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i, "result", strings.ToLower(common.HexToAddress(admin.Hex()).String()), "from", strings.ToLower(from.String()))
+		log.Debug("query result", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i, "result", strings.ToLower(common.HexToAddress(admin.Hex()).String()), "from", strings.ToLower(from.String()))
 		if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
 			tx.SetNoFeeTx()
 			return nil
