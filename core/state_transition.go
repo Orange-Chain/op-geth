@@ -601,9 +601,11 @@ func (st *StateTransition) refundGas(refundQuotient uint64) uint64 {
 	st.gasRemaining += refund
 
 	// Return ETH for remaining gas, exchanged at the original rate.
-	remaining := uint256.NewInt(st.gasRemaining)
-	remaining = remaining.Mul(remaining, uint256.MustFromBig(st.msg.GasPrice))
-	st.state.AddBalance(st.msg.From, remaining)
+	if !st.msg.IsNoFeeTx {
+		remaining := uint256.NewInt(st.gasRemaining)
+		remaining = remaining.Mul(remaining, uint256.MustFromBig(st.msg.GasPrice))
+		st.state.AddBalance(st.msg.From, remaining)
+	}
 
 	// Also return remaining gas to the block gas counter so it is
 	// available for the next transaction.
