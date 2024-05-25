@@ -250,7 +250,7 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 
 // CheckNoFeeTx Check if it's a no gas fee transaction and flag it if so
 func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
-	if strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
+	if tx.To() != nil && strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
 		log.Debug("BTCLayer2Bridge tx.", "txHash", tx.Hash().String())
 		err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum)
 		if err != nil {
