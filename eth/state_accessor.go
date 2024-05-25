@@ -239,6 +239,10 @@ func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block,
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(eth.blockchain.Config(), block.Number(), block.Time())
 	for idx, tx := range block.Transactions() {
+		err := statedb.CheckNoFeeTx(tx, signer)
+		if err != nil {
+			return nil, vm.BlockContext{}, nil, nil, err
+		}
 		// Assemble the transaction call message and return if the requested offset
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		txContext := core.NewEVMTxContext(msg)
