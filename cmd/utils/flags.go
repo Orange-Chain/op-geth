@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"math"
 	"math/big"
 	"net"
@@ -378,6 +379,12 @@ var (
 		Name:     "txpool.lifetime",
 		Usage:    "Maximum amount of time non-executable transaction are queued",
 		Value:    ethconfig.Defaults.TxPool.Lifetime,
+		Category: flags.TxPoolCategory,
+	}
+	TxPoolL1GasFeeMaxFlag = &cli.Int64Flag{
+		Name:     "txpool.l1.gasfee.max",
+		Usage:    "layer1 maximum cost fee",
+		Value:    types.L1GasFeeMax,
 		Category: flags.TxPoolCategory,
 	}
 	// Blob transaction pool settings
@@ -1610,6 +1617,9 @@ func setTxPool(ctx *cli.Context, cfg *legacypool.Config) {
 		// While technically this is a miner config parameter, we also want the txpool to enforce
 		// it to avoid accepting transactions that can never be included in a block.
 		cfg.EffectiveGasCeil = ctx.Uint64(MinerEffectiveGasLimitFlag.Name)
+	}
+	if ctx.IsSet(TxPoolL1GasFeeMaxFlag.Name) {
+		types.L1GasFeeMax = ctx.Int64(TxPoolL1GasFeeMaxFlag.Name)
 	}
 }
 
