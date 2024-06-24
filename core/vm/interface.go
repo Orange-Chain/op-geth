@@ -79,8 +79,6 @@ type StateDB interface {
 
 	AddLog(*types.Log)
 	AddPreimage(common.Hash, []byte)
-
-	CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error
 }
 
 // CallContext provides a basic interface for the EVM calling conventions. The EVM

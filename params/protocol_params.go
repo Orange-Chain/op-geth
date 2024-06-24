@@ -27,7 +27,6 @@ var (
 	OptimismBaseFeeRecipient = common.HexToAddress("0x4200000000000000000000000000000000000019")
 	// The L1 portion of the transaction fee accumulates at this predeploy
 	OptimismL1FeeRecipient = common.HexToAddress("0x420000000000000000000000000000000000001A")
-	BTCLayer2Bridge        = common.HexToAddress("0x5000000000000000000000000000000000000001")
 )
 
 const (
@@ -167,6 +166,8 @@ const (
 	Bls12381MapG1Gas          uint64 = 5500   // Gas price for BLS12-381 mapping field element to G1 operation
 	Bls12381MapG2Gas          uint64 = 110000 // Gas price for BLS12-381 mapping field element to G2 operation
 
+	P256VerifyGas uint64 = 3450 // secp256r1 elliptic curve signature verifier gas price
+
 	// The Refund Quotient is the cap on how much of the used gas can be refunded. Before EIP-3529,
 	// up to half the consumed gas could be refunded. Redefined as 1/5th in EIP-3529
 	RefundQuotient        uint64 = 2
@@ -196,7 +197,4 @@ var (
 	BeaconRootsStorageAddress = common.HexToAddress("0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02")
 	// SystemAddress is where the system-transaction is sent from as per EIP-4788
 	SystemAddress common.Address = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
-
-	BTCLayer2BridgeProposerAddressesSlotNum = big.NewInt(2)
-	BTCLayer2BridgeReviewAddressesSlotNum   = big.NewInt(4)
 )

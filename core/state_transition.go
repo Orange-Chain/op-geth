@@ -67,7 +67,7 @@ func (result *ExecutionResult) Revert() []byte {
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
-func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation bool, isHomestead, isEIP2028 bool, isEIP3860 bool) (uint64, error) {
+func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation bool, isHomestead, isEIP2028, isEIP3860 bool) (uint64, error) {
 	// Set the starting gas for the raw transaction
 	var gas uint64
 	if isContractCreation && isHomestead {
@@ -148,7 +148,6 @@ type Message struct {
 
 	IsSystemTx     bool                 // IsSystemTx indicates the message, if also a deposit, does not emit gas usage.
 	IsDepositTx    bool                 // IsDepositTx indicates the message is force-included and can persist a mint.
-	IsNoFeeTx      bool                 // IsNoFeeTx
 	Mint           *big.Int             // Mint is the amount to mint before EVM processing, or nil if there is no minting.
 	RollupCostData types.RollupCostData // RollupCostData caches data to compute the fee we charge for data availability
 }
@@ -167,7 +166,6 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 		AccessList:     tx.AccessList(),
 		IsSystemTx:     tx.IsSystemTx(),
 		IsDepositTx:    tx.IsDepositTx(),
-		IsNoFeeTx:      tx.IsNoFeeTx(),
 		Mint:           tx.Mint(),
 		RollupCostData: tx.RollupCostData(),
 
@@ -278,10 +276,6 @@ func (st *StateTransition) buyGas() error {
 	balanceCheckU256, overflow := uint256.FromBig(balanceCheck)
 	if overflow {
 		return fmt.Errorf("%w: address %v required balance exceeds 256 bits", ErrInsufficientFunds, st.msg.From.Hex())
-	}
-	if st.msg.IsNoFeeTx {
-		balanceCheckU256, _ = uint256.FromBig(big.NewInt(0))
-		mgval = big.NewInt(0)
 	}
 	if have, want := st.state.GetBalance(st.msg.From), balanceCheckU256; have.Cmp(want) < 0 {
 		return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, st.msg.From.Hex(), have, want)
@@ -601,11 +595,9 @@ func (st *StateTransition) refundGas(refundQuotient uint64) uint64 {
 	st.gasRemaining += refund
 
 	// Return ETH for remaining gas, exchanged at the original rate.
-	if !st.msg.IsNoFeeTx {
-		remaining := uint256.NewInt(st.gasRemaining)
-		remaining = remaining.Mul(remaining, uint256.MustFromBig(st.msg.GasPrice))
-		st.state.AddBalance(st.msg.From, remaining)
-	}
+	remaining := uint256.NewInt(st.gasRemaining)
+	remaining = remaining.Mul(remaining, uint256.MustFromBig(st.msg.GasPrice))
+	st.state.AddBalance(st.msg.From, remaining)
 
 	// Also return remaining gas to the block gas counter so it is
 	// available for the next transaction.
