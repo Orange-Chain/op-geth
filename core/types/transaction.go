@@ -64,7 +64,6 @@ type Transaction struct {
 
 	// cache of details to compute the data availability fee
 	rollupCostData atomic.Value
-	isNoFeeTx      bool
 }
 
 // NewTx creates a new transaction.
@@ -331,16 +330,6 @@ func (tx *Transaction) To() *common.Address {
 	return copyAddressPtr(tx.inner.to())
 }
 
-// IsNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
-func (tx *Transaction) IsNoFeeTx() bool {
-	return tx.isNoFeeTx
-}
-
-// IsNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
-func (tx *Transaction) SetNoFeeTx() {
-	tx.isNoFeeTx = true
-}
-
 // SourceHash returns the hash that uniquely identifies the source of the deposit tx,
 // e.g. a user deposit event, or a L1 info deposit included in a specific L2 block height.
 // Non-deposit transactions return a zeroed hash.
@@ -373,9 +362,6 @@ func (tx *Transaction) IsSystemTx() bool {
 
 // Cost returns (gas * gasPrice) + (blobGas * blobGasPrice) + value.
 func (tx *Transaction) Cost() *big.Int {
-	if tx.IsNoFeeTx() {
-		return big.NewInt(0)
-	}
 	total := new(big.Int).Mul(tx.GasPrice(), new(big.Int).SetUint64(tx.Gas()))
 	if tx.Type() == BlobTxType {
 		total.Add(total, new(big.Int).Mul(tx.BlobGasFeeCap(), new(big.Int).SetUint64(tx.BlobGas())))
@@ -386,7 +372,7 @@ func (tx *Transaction) Cost() *big.Int {
 
 // RollupCostData caches the information needed to efficiently compute the data availability fee
 func (tx *Transaction) RollupCostData() RollupCostData {
-	if tx.Type() == DepositTxType || tx.IsNoFeeTx() {
+	if tx.Type() == DepositTxType {
 		return RollupCostData{}
 	}
 	if v := tx.rollupCostData.Load(); v != nil {
@@ -403,6 +389,7 @@ func (tx *Transaction) RollupCostData() RollupCostData {
 
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
+// The return values may be nil or zero, if the transaction is unsigned.
 func (tx *Transaction) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.inner.rawSignatureValues()
 }
@@ -605,6 +592,9 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 	r, s, v, err := signer.SignatureValues(tx, sig)
 	if err != nil {
 		return nil, err
+	}
+	if r == nil || s == nil || v == nil {
+		return nil, fmt.Errorf("%w: r: %s, s: %s, v: %s", ErrInvalidSig, r, s, v)
 	}
 	cpy := tx.inner.copy()
 	cpy.setSignatureValues(signer.ChainID(), v, r, s)

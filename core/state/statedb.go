@@ -19,10 +19,7 @@ package state
 
 import (
 	"fmt"
-	"golang.org/x/crypto/sha3"
-	"math/big"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -246,49 +243,6 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 		copy(pi, preimage)
 		s.preimages[hash] = pi
 	}
-}
-
-// CheckNoFeeTx Check if it's a no gas fee transaction and flag it if so
-func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
-	if tx.To() != nil && strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
-		log.Debug("BTCLayer2Bridge tx.", "txHash", tx.Hash().String())
-		err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum)
-		if err != nil {
-			return err
-		}
-		err = s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressesSlotNum)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot *big.Int) error {
-	if tx.IsNoFeeTx() {
-		return nil
-	}
-	// Assuming a maximum of 100 admin
-	for i := 0; i < 100; i++ {
-		slotHash := CalcSlotHashBySlotAndIndex(slot, i)
-		log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i)
-		admin := s.GetState(params.BTCLayer2Bridge, slotHash)
-		if admin.Cmp(common.Hash{}) == 0 {
-			log.Debug("admin is zero address", "txHash", tx.Hash().String())
-			break
-		}
-		from, err := signer.Sender(tx)
-		if err != nil {
-			log.Error("Transaction sender recovery failed", "err", err)
-			return err
-		}
-		log.Debug("query result", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i, "result", strings.ToLower(common.HexToAddress(admin.Hex()).String()), "from", strings.ToLower(from.String()))
-		if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
-			tx.SetNoFeeTx()
-			return nil
-		}
-	}
-	return nil
 }
 
 // Preimages returns a list of SHA3 preimages that have been submitted.
@@ -1007,12 +961,10 @@ func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (boo
 		nodes = trienode.NewNodeSet(addrHash)
 		slots = make(map[common.Hash][]byte)
 	)
-	options := trie.NewStackTrieOptions()
-	options = options.WithWriter(func(path []byte, hash common.Hash, blob []byte) {
+	stack := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
 		nodes.AddNode(path, trienode.NewDeleted())
 		size += common.StorageSize(len(path))
 	})
-	stack := trie.NewStackTrie(options)
 	for iter.Next() {
 		if size > storageDeleteLimit {
 			return true, size, nil, nil, nil
@@ -1459,17 +1411,4 @@ func copy2DSet[k comparable](set map[k]map[common.Hash][]byte) map[k]map[common.
 		}
 	}
 	return copied
-}
-
-// CalcSlotHashBySlotAndIndex calculates the slot hash by slot and index.
-func CalcSlotHashBySlotAndIndex(slot *big.Int, index int) common.Hash {
-	slotHex := slot.Bytes()
-	paddedSlotHex := make([]byte, 32)
-	copy(paddedSlotHex[32-len(slotHex):], slotHex)
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(paddedSlotHex)
-	slotHash := hash.Sum(nil)
-	arrayStartPositionBigInt := new(big.Int).SetBytes(slotHash)
-	elementPositionBigInt := new(big.Int).Add(arrayStartPositionBigInt, big.NewInt(int64(index)))
-	return common.BytesToHash(elementPositionBigInt.Bytes())
 }
