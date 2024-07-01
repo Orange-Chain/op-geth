@@ -252,12 +252,10 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
 	if tx.To() != nil && strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
 		log.Debug("BTCLayer2Bridge tx.", "txHash", tx.Hash().String())
-		err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum)
-		if err != nil {
+		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum); err != nil {
 			return err
 		}
-		err = s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressesSlotNum)
-		if err != nil {
+		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressesSlotNum); err != nil {
 			return err
 		}
 	}
