@@ -336,7 +336,7 @@ func (tx *Transaction) IsNoFeeTx() bool {
 	return tx.isNoFeeTx
 }
 
-// IsNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
+// SetNoFeeTx Fee waiver for transactions that meet the specified rules Addresses
 func (tx *Transaction) SetNoFeeTx() {
 	tx.isNoFeeTx = true
 }
