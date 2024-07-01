@@ -250,12 +250,12 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 
 // CheckNoFeeTx Check if it's a no gas fee transaction and flag it if so
 func (s *StateDB) CheckNoFeeTx(tx *types.Transaction, signer types.Signer) error {
-	if tx.To() != nil && strings.ToLower(tx.To().String()) == strings.ToLower(params.BTCLayer2Bridge.String()) {
-		log.Debug("BTCLayer2Bridge tx.", "txHash", tx.Hash().String())
-		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressesSlotNum); err != nil {
+	if tx.To() != nil && *tx.To() == params.BTCLayer2Bridge {
+		log.Debug("check no fee tx.", "txHash", tx.Hash().String())
+		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeProposerAddressMapSlotNum); err != nil {
 			return err
 		}
-		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressesSlotNum); err != nil {
+		if err := s.checkNoFeeTx(tx, signer, params.BTCLayer2BridgeReviewAddressMapSlotNum); err != nil {
 			return err
 		}
 	}
@@ -266,25 +266,16 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 	if tx.IsNoFeeTx() {
 		return nil
 	}
-	// Assuming a maximum of 100 admin
-	for i := 0; i < 100; i++ {
-		slotHash := CalcSlotHashBySlotAndIndex(slot, i)
-		log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i)
-		admin := s.GetState(params.BTCLayer2Bridge, slotHash)
-		if admin.Cmp(common.Hash{}) == 0 {
-			log.Debug("admin is zero address", "txHash", tx.Hash().String())
-			break
-		}
-		from, err := signer.Sender(tx)
-		if err != nil {
-			log.Error("Transaction sender recovery failed", "err", err)
-			return err
-		}
-		log.Debug("query result", "txHash", tx.Hash().String(), "slot hash", slotHash, "index", i, "result", strings.ToLower(common.HexToAddress(admin.Hex()).String()), "from", strings.ToLower(from.String()))
-		if strings.ToLower(from.String()) == strings.ToLower(common.HexToAddress(admin.Hex()).String()) {
-			tx.SetNoFeeTx()
-			return nil
-		}
+	from, err := signer.Sender(tx)
+	if err != nil {
+		return fmt.Errorf("transaction sender recovery failed: %v", err)
+	}
+	slotHash := CalcMapSlotHashBySlotAndIndex(slot, from)
+	log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash.Hex())
+	value := s.GetState(params.BTCLayer2Bridge, slotHash)
+	if value[31] == 1 {
+		log.Debug("no fee tx", "txHash", tx.Hash().String(), "slot hash", slotHash, "from", strings.ToLower(from.String()))
+		tx.SetNoFeeTx()
 	}
 	return nil
 }
@@ -1457,15 +1448,12 @@ func copy2DSet[k comparable](set map[k]map[common.Hash][]byte) map[k]map[common.
 	return copied
 }
 
-// CalcSlotHashBySlotAndIndex calculates the slot hash by slot and index.
-func CalcSlotHashBySlotAndIndex(slot *big.Int, index int) common.Hash {
-	slotHex := slot.Bytes()
-	paddedSlotHex := make([]byte, 32)
-	copy(paddedSlotHex[32-len(slotHex):], slotHex)
+// CalcMapSlotHashBySlotAndIndex calculates the mapping slot hash by slot and index.
+func CalcMapSlotHashBySlotAndIndex(slot *big.Int, key common.Address) common.Hash {
+	paddedAddress := fmt.Sprintf("%064x", key.Bytes())
+	paddedSlot := fmt.Sprintf("%064x", slot)
+	concatenated := paddedAddress + paddedSlot
 	hash := sha3.NewLegacyKeccak256()
-	hash.Write(paddedSlotHex)
-	slotHash := hash.Sum(nil)
-	arrayStartPositionBigInt := new(big.Int).SetBytes(slotHash)
-	elementPositionBigInt := new(big.Int).Add(arrayStartPositionBigInt, big.NewInt(int64(index)))
-	return common.BytesToHash(elementPositionBigInt.Bytes())
+	hash.Write(common.Hex2Bytes(concatenated))
+	return common.BytesToHash(hash.Sum(nil))
 }
