@@ -1447,7 +1447,7 @@ func copy2DSet[k comparable](set map[k]map[common.Hash][]byte) map[k]map[common.
 	return copied
 }
 
-// CalcMapSlotHashBySlotAndKey calculates the mapping slot hash by slot and index.
+// CalcMapSlotHashBySlotAndKey calculates the mapping slot hash by slot and key.
 func CalcMapSlotHashBySlotAndKey(slot *big.Int, key common.Address) common.Hash {
 	paddedAddress := fmt.Sprintf("%064x", key.Bytes())
 	paddedSlot := fmt.Sprintf("%064x", slot)
