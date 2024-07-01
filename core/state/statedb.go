@@ -19,12 +19,10 @@ package state
 
 import (
 	"fmt"
-	"sort"
-	"time"
-
-	"golang.org/x/crypto/sha3"
 	"math/big"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -38,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/ethereum/go-ethereum/trie/triestate"
 	"github.com/holiman/uint256"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
