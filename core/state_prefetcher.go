@@ -60,7 +60,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 	byzantium := p.config.IsByzantium(block.Number())
 	for i, tx := range block.Transactions() {
 		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
-			log.Error(err.Error())
+			log.Error("check no fee tx error.", "func", "Prefetch", "err", err.Error())
 			return
 		}
 		// If block precaching was interrupted, abort

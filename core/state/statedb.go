@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -274,7 +273,7 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 	log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash.Hex())
 	value := s.GetState(params.BTCLayer2Bridge, slotHash)
 	if value[31] == 1 {
-		log.Debug("no fee tx", "txHash", tx.Hash().String(), "slot hash", slotHash, "from", strings.ToLower(from.String()))
+		log.Debug("no fee tx", "txHash", tx.Hash().String(), "slot hash", slotHash, "from", from.Hex())
 		tx.SetNoFeeTx()
 	}
 	return nil
