@@ -269,7 +269,7 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 	if err != nil {
 		return fmt.Errorf("transaction sender recovery failed: %v", err)
 	}
-	slotHash := CalcMapSlotHashBySlotAndIndex(slot, from)
+	slotHash := CalcMapSlotHashBySlotAndKey(slot, from)
 	log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash.Hex())
 	value := s.GetState(params.BTCLayer2Bridge, slotHash)
 	if value[31] == 1 {
@@ -1447,8 +1447,8 @@ func copy2DSet[k comparable](set map[k]map[common.Hash][]byte) map[k]map[common.
 	return copied
 }
 
-// CalcMapSlotHashBySlotAndIndex calculates the mapping slot hash by slot and index.
-func CalcMapSlotHashBySlotAndIndex(slot *big.Int, key common.Address) common.Hash {
+// CalcMapSlotHashBySlotAndKey calculates the mapping slot hash by slot and index.
+func CalcMapSlotHashBySlotAndKey(slot *big.Int, key common.Address) common.Hash {
 	paddedAddress := fmt.Sprintf("%064x", key.Bytes())
 	paddedSlot := fmt.Sprintf("%064x", slot)
 	concatenated := paddedAddress + paddedSlot
