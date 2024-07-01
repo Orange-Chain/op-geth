@@ -19,11 +19,12 @@ package state
 
 import (
 	"fmt"
+	"sort"
+	"time"
+
 	"golang.org/x/crypto/sha3"
 	"math/big"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
