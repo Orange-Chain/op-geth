@@ -59,8 +59,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 	// Iterate over and process the individual transactions
 	byzantium := p.config.IsByzantium(block.Number())
 	for i, tx := range block.Transactions() {
-		err := statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
 			log.Error(err.Error())
 			return
 		}

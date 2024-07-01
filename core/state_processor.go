@@ -82,8 +82,7 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	}
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
-		err := statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
 			return nil, nil, 0, err
 		}
 		msg, err := TransactionToMessage(tx, signer, header.BaseFee)
@@ -180,8 +179,7 @@ func applyTransaction(msg *Message, config *params.ChainConfig, gp *GasPool, sta
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
 func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, error) {
-	err := statedb.CheckNoFeeTx(tx, types.MakeSigner(config, header.Number, header.Time))
-	if err != nil {
+	if err := statedb.CheckNoFeeTx(tx, types.MakeSigner(config, header.Number, header.Time)); err != nil {
 		return nil, err
 	}
 	msg, err := TransactionToMessage(tx, types.MakeSigner(config, header.Number, header.Time), header.BaseFee)

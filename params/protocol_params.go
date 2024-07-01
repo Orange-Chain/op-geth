@@ -199,6 +199,6 @@ var (
 	// SystemAddress is where the system-transaction is sent from as per EIP-4788
 	SystemAddress common.Address = common.HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
 
-	BTCLayer2BridgeProposerAddressesSlotNum = big.NewInt(2)
-	BTCLayer2BridgeReviewAddressesSlotNum   = big.NewInt(4)
+	BTCLayer2BridgeProposerAddressesSlotNum = big.NewInt(0)
+	BTCLayer2BridgeReviewAddressesSlotNum   = big.NewInt(1)
 )

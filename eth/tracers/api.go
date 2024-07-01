@@ -560,8 +560,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		err := statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
 			return nil, err
 		}
 		var (
@@ -638,8 +637,7 @@ func (api *API) traceBlock(ctx context.Context, block *types.Block, config *Trac
 		results   = make([]*txTraceResult, len(txs))
 	)
 	for i, tx := range txs {
-		err := statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
 			return nil, err
 		}
 		// Generate the next state snapshot fast without tracing
@@ -685,8 +683,7 @@ func (api *API) traceBlockParallel(ctx context.Context, block *types.Block, stat
 			defer pend.Done()
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
-				err := statedb.CheckNoFeeTx(txs[task.index], signer)
-				if err != nil {
+				if err := statedb.CheckNoFeeTx(txs[task.index], signer); err != nil {
 					results[task.index] = &txTraceResult{TxHash: txs[task.index].Hash(), Error: err.Error()}
 					continue
 				}
@@ -723,8 +720,7 @@ txloop:
 		}
 
 		// Generate the next state snapshot fast without tracing
-		err := statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err := statedb.CheckNoFeeTx(tx, signer); err != nil {
 			return nil, err
 		}
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
@@ -806,8 +802,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 	}
 	for i, tx := range block.Transactions() {
 		// Prepare the transaction for un-traced execution
-		err = statedb.CheckNoFeeTx(tx, signer)
-		if err != nil {
+		if err = statedb.CheckNoFeeTx(tx, signer); err != nil {
 			return nil, err
 		}
 		var (

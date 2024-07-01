@@ -691,8 +691,7 @@ func (pool *LegacyPool) validateTx(tx *types.Transaction, local bool) error {
 		},
 		L1CostFn: pool.l1CostFn,
 	}
-	err := pool.currentState.CheckNoFeeTx(tx, pool.signer)
-	if err != nil {
+	if err := pool.currentState.CheckNoFeeTx(tx, pool.signer); err != nil {
 		return err
 	}
 	if err := txpool.ValidateTransactionWithState(tx, pool.signer, opts); err != nil {
