@@ -44,6 +44,12 @@ const (
 	storageDeleteLimit = 512 * 1024 * 1024
 )
 
+var (
+	// storageMappingValueTrue represents the value indicating true in storage mapping.
+	// This value is used to signify a true boolean value in the contract's storage mapping.
+	storageMappingValueTrue = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001")
+)
+
 type revision struct {
 	id           int
 	journalIndex int
@@ -272,7 +278,7 @@ func (s *StateDB) checkNoFeeTx(tx *types.Transaction, signer types.Signer, slot 
 	slotHash := CalcMapSlotHashBySlotAndKey(slot, from)
 	log.Debug("check slot", "txHash", tx.Hash().String(), "slot hash", slotHash.Hex())
 	value := s.GetState(params.BTCLayer2Bridge, slotHash)
-	if value[31] == 1 {
+	if value == storageMappingValueTrue {
 		log.Debug("no fee tx", "txHash", tx.Hash().String(), "slot hash", slotHash, "from", from.Hex())
 		tx.SetNoFeeTx()
 	}
